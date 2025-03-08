@@ -1,0 +1,16 @@
+services:
+  database:
+    image: postgres:17
+    restart: always
+    container_name: connector_database
+    ports:
+      - "5430:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: connector
+    volumes:
+      - database_data:/var/lib/postgresql/data
+
+volumes:
+  database_data:
