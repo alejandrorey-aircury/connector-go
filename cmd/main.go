@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"github.com/joho/godotenv"
 	"log"
 	"os"
 
@@ -39,6 +40,12 @@ type TargetTableDefinition struct {
 }
 
 func main() {
+	err := godotenv.Load()
+
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
 	var configurationFile string
 
 	flag.StringVar(&configurationFile, "file", "", "Path to the YAML configuration file")
@@ -61,6 +68,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error parsing YAML: %v", err)
 	}
+
+	definition.Source.URL = os.ExpandEnv(definition.Source.URL)
+	definition.Target.URL = os.ExpandEnv(definition.Target.URL)
 
 	log.Println(definition)
 }

@@ -1,5 +1,5 @@
 source:
-  url: 'psql://${CONNECTOR_PSQL_HOST}/${CONNECTOR_PSQL_DB}'
+  url: 'postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_DB}'
   model:
     tables:
       source_table:
@@ -11,7 +11,7 @@ source:
         keys:
           - id
 target:
-  url: 'psql://${CONNECTOR_PSQL_HOST}/${CONNECTOR_PSQL_DB}'
+  url: 'postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_DB}'
   model:
     tables:
       target_table:
