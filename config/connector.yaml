@@ -1,0 +1,21 @@
+source:
+  url: 'psql://${CONNECTOR_PSQL_HOST}/${CONNECTOR_PSQL_DB}'
+  model:
+    tables:
+      source_table:
+        schema: demos
+        columns:
+          id: integer
+          name: string
+          surname: string
+        keys:
+          - id
+target:
+  url: 'psql://${CONNECTOR_PSQL_HOST}/${CONNECTOR_PSQL_DB}'
+  model:
+    tables:
+      target_table:
+        resourceName: ~
+        inherit: '@source.tables.source_table'
+        sourceTable: source_table
+        schema: demos
