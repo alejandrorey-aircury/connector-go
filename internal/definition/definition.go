@@ -3,7 +3,6 @@ package definition
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 
 	"gopkg.in/yaml.v3"
@@ -17,19 +16,25 @@ func PrintDefinition(definition Definition) {
 	fmt.Println(jsonData)
 }
 
-func ProcessDefinition(configurationFilePath string) (Definition, error) {
+func parseDefinition(configurationFilePath string) (Definition, error) {
 	configurationFile, err := os.ReadFile(configurationFilePath)
 
 	if err != nil {
-		log.Fatalf("Error reading YAML file: %v", err)
+		return Definition{}, err
 	}
 
 	var definition Definition
 
 	err = yaml.Unmarshal(configurationFile, &definition)
 
+	return definition, err
+}
+
+func ProcessDefinition(configurationFilePath string) (Definition, error) {
+	definition, err := parseDefinition(configurationFilePath)
+
 	if err != nil {
-		log.Fatalf("Error parsing YAML: %v", err)
+		return Definition{}, &ProcessError{Message: err.Error()}
 	}
 
 	definition.Source.URL = os.ExpandEnv(definition.Source.URL)
