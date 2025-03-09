@@ -15,9 +15,11 @@ type ModelDefinition[TableDefinition SourceTableDefinition | TargetTableDefiniti
 }
 
 type TableDefinition struct {
-	Schema  string            `yaml:"schema,omitempty"`
-	Columns map[string]string `yaml:"columns,omitempty"`
-	Keys    []string          `yaml:"keys,omitempty"`
+	Schema        string            `yaml:"schema,omitempty"`
+	Columns       map[string]string `yaml:"columns,omitempty"`
+	Keys          []string          `yaml:"keys,omitempty"`
+	Indices       []string          `yaml:"indices,omitempty"`
+	UniqueIndices []string          `yaml:"uniqueIndices,omitempty"`
 }
 
 type SourceTableDefinition struct {
