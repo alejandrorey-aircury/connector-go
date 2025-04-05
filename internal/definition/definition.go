@@ -1,20 +1,10 @@
 package definition
 
 import (
-	"encoding/json"
-	"fmt"
 	"os"
 
 	"gopkg.in/yaml.v3"
 )
-
-func PrintDefinition(definition Definition) {
-	jsonDataBytes, _ := json.MarshalIndent(definition, "", "  ")
-
-	jsonData := string(jsonDataBytes)
-
-	fmt.Println(jsonData)
-}
 
 func parseDefinition(configurationFilePath string) (Definition, error) {
 	configurationFile, err := os.ReadFile(configurationFilePath)
