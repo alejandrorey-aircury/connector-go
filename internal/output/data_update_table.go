@@ -3,6 +3,7 @@ package output
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/jedib0t/go-pretty/v6/table"
 )
@@ -14,6 +15,8 @@ type DataUpdateTableRow struct {
 	Inserts     int
 	Updates     int
 	Drops       int
+	ProcessTime float64
+	StartTime   time.Time
 }
 
 func (row DataUpdateTableRow) GetRowValues() table.Row {
@@ -24,6 +27,7 @@ func (row DataUpdateTableRow) GetRowValues() table.Row {
 		row.Inserts,
 		row.Updates,
 		row.Drops,
+		row.ProcessTime,
 	}
 }
 
@@ -38,7 +42,7 @@ func NewDataUpdateTable() *DataUpdateTable {
 		map[string]DataUpdateTableRow{},
 	}
 
-	dataUpdateTable.SetHeaders(table.Row{"Target Table", "Source", "Target", "Inserts", "Updates", "Drops"})
+	dataUpdateTable.SetHeaders(table.Row{"Target Table", "Source", "Target", "Inserts", "Updates", "Drops", "Process Time (s)"})
 
 	return dataUpdateTable
 }
@@ -64,6 +68,8 @@ func (dataUpdateTable *DataUpdateTable) AddNewTableRow(tableName string) {
 		Inserts:     0,
 		Updates:     0,
 		Drops:       0,
+		ProcessTime: 0,
+		StartTime:   time.Now(),
 	}
 
 	dataUpdateTable.Rows[tableName] = row
@@ -72,6 +78,8 @@ func (dataUpdateTable *DataUpdateTable) AddNewTableRow(tableName string) {
 }
 
 func (dataUpdateTable *DataUpdateTable) UpdateTableRow(tableName string, row DataUpdateTableRow) {
+	row.ProcessTime = time.Since(row.StartTime).Seconds()
+
 	dataUpdateTable.Rows[tableName] = row
 
 	dataUpdateTable.RefreshTable()
