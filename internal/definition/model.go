@@ -28,6 +28,5 @@ type SourceTableDefinition struct {
 
 type TargetTableDefinition struct {
 	TableDefinition `yaml:",inline"`
-	Inherit         string `yaml:"inherit,omitempty"`
 	SourceTable     string `yaml:"sourceTable,omitempty"`
 }

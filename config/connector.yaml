@@ -2,7 +2,7 @@ source:
   url: 'postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${SOURCE_DATABASE_DB}?sslmode=disable'
   model:
     tables:
-      source_table:
+      caching_source: &caching_source
         schema: demos
         columns:
           id: integer
@@ -14,8 +14,8 @@ target:
   url: 'postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${TARGET_DATABASE_DB}?sslmode=disable'
   model:
     tables:
-      target_table:
+      caching_target:
+        <<: *caching_source
         resourceName: ~
-        inherit: '@source.tables.source_table'
-        sourceTable: source_table
         schema: demos
+        sourceTable: caching_source
