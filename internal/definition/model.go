@@ -1,32 +1,25 @@
 package definition
 
 type Definition struct {
-	Source EndpointDefinition[SourceTableDefinition] `yaml:"source"`
-	Target EndpointDefinition[TargetTableDefinition] `yaml:"target"`
+	Source EndpointDefinition `yaml:"source"`
+	Target EndpointDefinition `yaml:"target"`
 }
 
-type EndpointDefinition[TableDefinition SourceTableDefinition | TargetTableDefinition] struct {
-	URL   string                           `yaml:"url"`
-	Model ModelDefinition[TableDefinition] `yaml:"model"`
+type EndpointDefinition struct {
+	URL   string          `yaml:"url"`
+	Model ModelDefinition `yaml:"model"`
 }
 
-type ModelDefinition[TableDefinition SourceTableDefinition | TargetTableDefinition] struct {
+type ModelDefinition struct {
 	Tables map[string]TableDefinition `yaml:"tables"`
 }
 
 type TableDefinition struct {
-	Schema        string            `yaml:"schema,omitempty"`
-	Columns       map[string]string `yaml:"columns,omitempty"`
-	Keys          []string          `yaml:"keys,omitempty"`
-	Indices       []string          `yaml:"indices,omitempty"`
-	UniqueIndices []string          `yaml:"uniqueIndices,omitempty"`
-}
-
-type SourceTableDefinition struct {
-	TableDefinition `yaml:",inline"`
-}
-
-type TargetTableDefinition struct {
-	TableDefinition `yaml:",inline"`
-	SourceTable     string `yaml:"sourceTable,omitempty"`
+	Schema        string                 `yaml:"schema,omitempty"`
+	ResourceName  string                 `yaml:"resourceName,omitempty"`
+	Columns       map[string]interface{} `yaml:"columns,omitempty"`
+	Keys          []string               `yaml:"keys,omitempty"`
+	Indices       []string               `yaml:"indices,omitempty"`
+	UniqueIndices []string               `yaml:"uniqueIndices,omitempty"`
+	SourceTable   string                 `yaml:"sourceTable,omitempty"`
 }
