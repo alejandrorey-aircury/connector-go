@@ -10,12 +10,26 @@ source:
           surname: string
         keys:
           - id
+      second_caching_source:
+        schema: demos
+        resourceName: caching_source
+        columns:
+          id: integer
+          name: string
+          surname: string
+        keys:
+          - name
 target:
   url: 'postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${TARGET_DATABASE_DB}?sslmode=disable'
   model:
     tables:
       caching_target:
         <<: *caching_source
-        resourceName: ~
         schema: demos
         sourceTable: caching_source
+
+      second_caching_target:
+        <<: *caching_source
+        resourceName: caching_target
+        schema: demos
+        sourceTable: second_caching_source

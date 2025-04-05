@@ -4,11 +4,19 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/aircury/connector/internal/model"
 	"github.com/aircury/connector/internal/shared"
 )
 
-func FetchData(db *sql.DB, query string) (map[string]shared.Record, error) {
-	rows, err := db.Query(query)
+func GetTableSelectQuery(table *model.Table) string {
+	return fmt.Sprintf("SELECT * FROM %s.%s", table.Schema, table.GetFqName())
+}
+
+func FetchData(connection *sql.DB, table *model.Table) (map[string]shared.Record, error) {
+	query := GetTableSelectQuery(table)
+
+	rows, err := connection.Query(query)
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query: %w", err)
 	}
@@ -16,11 +24,14 @@ func FetchData(db *sql.DB, query string) (map[string]shared.Record, error) {
 	defer rows.Close()
 
 	columns, err := rows.Columns()
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to get columns: %w", err)
 	}
 
 	records := make(map[string]shared.Record)
+
+	keyName := table.GetKeys()[0].Name
 
 	for rows.Next() {
 		values := make([]interface{}, len(columns))
@@ -41,7 +52,7 @@ func FetchData(db *sql.DB, query string) (map[string]shared.Record, error) {
 			record[colName] = val
 		}
 
-		records[fmt.Sprintf("%v", record["id"])] = record
+		records[fmt.Sprintf("%v", record[keyName])] = record
 	}
 
 	if err = rows.Err(); err != nil {

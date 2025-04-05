@@ -3,21 +3,19 @@ package algorithm
 import (
 	"database/sql"
 	"fmt"
-	"time"
 
 	"github.com/aircury/connector/internal/dataprovider"
+	"github.com/aircury/connector/internal/model"
 	"github.com/aircury/connector/internal/shared"
 )
 
-func SequentialOrdered(db *sql.DB, sourceQuery string, targetQuery string) (*DiffOutput, error) {
-	startTime := time.Now()
-
-	sourceRecords, err := dataprovider.FetchData(db, sourceQuery)
+func SequentialOrdered(sourceConnection, targetConnection *sql.DB, sourceTable, targetTable *model.Table) (*DiffOutput, error) {
+	sourceRecords, err := dataprovider.FetchData(sourceConnection, sourceTable)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching source data: %w", err)
 	}
 
-	targetRecords, err := dataprovider.FetchData(db, targetQuery)
+	targetRecords, err := dataprovider.FetchData(targetConnection, targetTable)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching target data: %w", err)
 	}
@@ -45,8 +43,6 @@ func SequentialOrdered(db *sql.DB, sourceQuery string, targetQuery string) (*Dif
 	for _, record := range targetRecords {
 		diffOutput.ToDelete = append(diffOutput.ToDelete, record)
 	}
-
-	diffOutput.ProcessTime = time.Since(startTime)
 
 	return diffOutput, nil
 }

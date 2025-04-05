@@ -3,79 +3,94 @@ package commands
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/aircury/connector/internal/algorithm"
 	"github.com/aircury/connector/internal/database"
+	"github.com/aircury/connector/internal/dataprovider"
 	definitionPkg "github.com/aircury/connector/internal/definition"
 	"github.com/aircury/connector/internal/environment"
+	"github.com/aircury/connector/internal/model"
 	"github.com/aircury/connector/internal/output"
 	"github.com/urfave/cli/v3"
 )
 
 func dataUpdateCmd(_ context.Context, cli *cli.Command) error {
+	startTime := time.Now()
+
 	environment.LoadEnv()
 
 	configurationFile := cli.String("config-file")
 
-	definition, err := definitionPkg.ProcessDefinition(configurationFile)
+	definition, definitionErr := definitionPkg.ProcessDefinition(configurationFile)
 
-	if err != nil {
-		return err
+	if definitionErr != nil {
+		return definitionErr
 	}
+
+	sourceModel := model.ConstructModelFromDefinition(definition.Source)
+	targetModel := model.ConstructModelFromDefinition(definition.Target)
 
 	dataUpdateTable := output.NewDataUpdateTable()
 
 	dataUpdateTable.Render()
 
-	db, err := database.ConnectDatabase(definition.Source.URL)
+	sourceConnection, sourceErr := database.ConnectDatabase(definition.Source.URL)
+	targetConnection, targetErr := database.ConnectDatabase(definition.Target.URL)
 
-	defer db.Close()
-
-	if err != nil {
-		return err
+	if sourceErr != nil {
+		return sourceErr
 	}
 
-	sourceQuery := "SELECT * FROM demos.caching_source"
-	targetQuery := "SELECT * FROM demos.caching_target"
-
-	tableName := "caching_target"
-
-	dataUpdateTable.AddNewTableRow(tableName)
-
-	row, err := dataUpdateTable.GetRowByTableName(tableName)
-
-	if err != nil {
-		return err
+	if targetErr != nil {
+		return targetErr
 	}
 
-	var sourceTotal, targetTotal int
+	defer sourceConnection.Close()
+	defer targetConnection.Close()
 
-	sourceTotalRow := db.QueryRow(fmt.Sprintf("SELECT count(*) FROM (%s) as query", sourceQuery))
-	sourceTotalRow.Scan(&sourceTotal)
+	for targetTableName, targetTable := range targetModel.Tables {
+		dataUpdateTable.AddNewTableRow(targetTableName)
 
-	row.SourceTotal = sourceTotal
-	dataUpdateTable.UpdateTableRow(tableName, row)
+		row, err := dataUpdateTable.GetRowByTableName(targetTableName)
 
-	targetTotalRow := db.QueryRow(fmt.Sprintf("SELECT count(*) FROM (%s) as query", targetQuery))
-	targetTotalRow.Scan(&targetTotal)
+		if err != nil {
+			return err
+		}
 
-	row.TargetTotal = targetTotal
-	dataUpdateTable.UpdateTableRow(tableName, row)
+		sourceTable := sourceModel.GetTableByName(targetTable.SourceTable)
 
-	diff, err := algorithm.SequentialOrdered(db, sourceQuery, targetQuery)
+		if sourceTable == nil {
+			return fmt.Errorf("table %s not found", targetTableName)
+		}
 
-	row.Inserts = len(diff.ToInsert)
-	row.Updates = len(diff.ToUpdate)
-	row.Drops = len(diff.ToDelete)
-	dataUpdateTable.UpdateTableRow(tableName, row)
+		sourceQuery := dataprovider.GetTableSelectQuery(sourceTable)
+		targetQuery := dataprovider.GetTableSelectQuery(targetTable)
 
-	if err != nil {
-		return err
+		var sourceTotal, targetTotal int
+
+		sourceTotalRow := sourceConnection.QueryRow(fmt.Sprintf("SELECT count(*) FROM (%s) as query", sourceQuery))
+		sourceTotalRow.Scan(&sourceTotal)
+
+		row.SourceTotal = sourceTotal
+		dataUpdateTable.UpdateTableRow(targetTableName, row)
+
+		targetTotalRow := targetConnection.QueryRow(fmt.Sprintf("SELECT count(*) FROM (%s) as query", targetQuery))
+		targetTotalRow.Scan(&targetTotal)
+
+		row.TargetTotal = targetTotal
+		dataUpdateTable.UpdateTableRow(targetTableName, row)
+
+		diff, err := algorithm.SequentialOrdered(sourceConnection, targetConnection, sourceTable, targetTable)
+
+		row.Inserts = len(diff.ToInsert)
+		row.Updates = len(diff.ToUpdate)
+		row.Drops = len(diff.ToDelete)
+		dataUpdateTable.UpdateTableRow(targetTableName, row)
 	}
-
-	fmt.Println(fmt.Sprintf("Process time: %f seconds", diff.ProcessTime.Seconds()))
 
 	fmt.Println("Data update process finished!!")
+	fmt.Println(fmt.Sprintf("Execution time: %f seconds", time.Since(startTime).Seconds()))
 
 	return nil
 }
