@@ -1,5 +1,5 @@
 source:
-  url: 'postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_DB}'
+  url: 'postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${SOURCE_DATABASE_DB}?sslmode=disable'
   model:
     tables:
       source_table:
@@ -11,7 +11,7 @@ source:
         keys:
           - id
 target:
-  url: 'postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_DB}'
+  url: 'postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${TARGET_DATABASE_DB}?sslmode=disable'
   model:
     tables:
       target_table:
