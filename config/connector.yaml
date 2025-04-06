@@ -13,7 +13,6 @@ source:
 
       second_caching_source: &second_caching_source
         schema: demos
-        resourceName: caching_source
         columns:
           id: integer
           name: string
@@ -31,6 +30,5 @@ target:
 
       second_caching_target:
         <<: *second_caching_source
-        resourceName: caching_target
         schema: demos
         sourceTable: second_caching_source
