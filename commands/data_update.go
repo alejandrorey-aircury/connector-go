@@ -74,19 +74,20 @@ func dataUpdateCmd(_ context.Context, cli *cli.Command) error {
 			Table:      targetTable,
 		}
 
-		sourceQuery := source.GetTableSelectQuery()
-		targetQuery := target.GetTableSelectQuery()
+		sourceTotal, err := source.GetCount()
 
-		var sourceTotal, targetTotal int
-
-		sourceTotalRow := sourceConnection.QueryRow(fmt.Sprintf("SELECT count(*) FROM (%s) as query", sourceQuery))
-		sourceTotalRow.Scan(&sourceTotal)
+		if err != nil {
+			return err
+		}
 
 		row.SourceTotal = sourceTotal
 		dataUpdateTable.UpdateTableRow(targetTableName, row)
 
-		targetTotalRow := targetConnection.QueryRow(fmt.Sprintf("SELECT count(*) FROM (%s) as query", targetQuery))
-		targetTotalRow.Scan(&targetTotal)
+		targetTotal, err := target.GetCount()
+
+		if err != nil {
+			return err
+		}
 
 		row.TargetTotal = targetTotal
 		dataUpdateTable.UpdateTableRow(targetTableName, row)
