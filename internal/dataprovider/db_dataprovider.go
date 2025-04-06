@@ -4,17 +4,20 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/aircury/connector/internal/model"
 	"github.com/aircury/connector/internal/shared"
 )
 
-type DataProvider interface {
-	GetTotalCount() (int, error)
-	FetchData() (map[string]shared.Record, error)
+type DBDataProvider struct {
+	baseDataProvider
+	Connection *sql.DB
 }
 
-type DBDataProvider struct {
-	AbstractDataProvider
-	Connection *sql.DB
+func NewDBDataProvider(connection *sql.DB, table *model.Table) *DBDataProvider {
+	return &DBDataProvider{
+		baseDataProvider: newBaseDataProvider(table),
+		Connection:       connection,
+	}
 }
 
 func (dataProvider *DBDataProvider) getTableSelectQuery() string {

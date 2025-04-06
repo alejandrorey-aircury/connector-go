@@ -74,23 +74,13 @@ func dataUpdateCommand(_ context.Context, cli *cli.Command) error {
 		}
 
 		source := endpoint.Endpoint{
-			DataProvider: &dataprovider.DBDataProvider{
-				Connection: sourceConnection,
-				AbstractDataProvider: dataprovider.AbstractDataProvider{
-					Table: sourceTable,
-				},
-			},
-			Table: sourceTable,
+			DataProvider: dataprovider.NewDBDataProvider(sourceConnection, sourceTable),
+			Table:        sourceTable,
 		}
 
 		target := endpoint.Endpoint{
-			DataProvider: &dataprovider.DBDataProvider{
-				Connection: targetConnection,
-				AbstractDataProvider: dataprovider.AbstractDataProvider{
-					Table: targetTable,
-				},
-			},
-			Table: targetTable,
+			DataProvider: dataprovider.NewDBDataProvider(targetConnection, targetTable),
+			Table:        targetTable,
 		}
 
 		sourceTotal, err := source.DataProvider.GetTotalCount()

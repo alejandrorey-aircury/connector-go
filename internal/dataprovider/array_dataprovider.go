@@ -1,12 +1,20 @@
 package dataprovider
 
 import (
+	"github.com/aircury/connector/internal/model"
 	"github.com/aircury/connector/internal/shared"
 )
 
 type ArrayDataProvider struct {
-	AbstractDataProvider
+	baseDataProvider
 	Data []shared.Record
+}
+
+func NewArrayDataProvider(table *model.Table) *ArrayDataProvider {
+	return &ArrayDataProvider{
+		baseDataProvider: newBaseDataProvider(table),
+		Data:             []shared.Record{},
+	}
 }
 
 func (dataProvider *ArrayDataProvider) GetTotalCount() (int, error) {
