@@ -24,7 +24,7 @@ func (algorithm *WriteAllAlgorithm) Run() (*DiffOutput, error) {
 		return nil, err
 	}
 
-	diffOutput := algorithm.CreateDiffOutput(sourceRecords, targetRecords)
+	diffOutput := algorithm.NewDiffOutput()
 
 	for _, sourceRecord := range sourceRecords {
 		diffOutput.ToInsert = append(diffOutput.ToInsert, sourceRecord)
@@ -33,6 +33,9 @@ func (algorithm *WriteAllAlgorithm) Run() (*DiffOutput, error) {
 	for _, targetRecord := range targetRecords {
 		diffOutput.ToDelete = append(diffOutput.ToDelete, targetRecord)
 	}
+
+	diffOutput.SourceCount = len(sourceRecords)
+	diffOutput.TargetCount = len(targetRecords)
 
 	return diffOutput, nil
 }

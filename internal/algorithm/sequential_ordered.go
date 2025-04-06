@@ -24,7 +24,7 @@ func (algorithm *SequentialOrderedAlgorithm) Run() (*DiffOutput, error) {
 		return nil, err
 	}
 
-	diffOutput := algorithm.CreateDiffOutput(sourceRecords, targetRecords)
+	diffOutput := algorithm.NewDiffOutput()
 
 	for key, sourceRecord := range sourceRecords {
 		if targetRecord, exists := targetRecords[key]; exists {
@@ -41,6 +41,9 @@ func (algorithm *SequentialOrderedAlgorithm) Run() (*DiffOutput, error) {
 	for _, record := range targetRecords {
 		diffOutput.ToDelete = append(diffOutput.ToDelete, record)
 	}
+
+	diffOutput.SourceCount = len(sourceRecords)
+	diffOutput.TargetCount = len(targetRecords)
 
 	return diffOutput, nil
 }

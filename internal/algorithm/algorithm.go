@@ -32,13 +32,13 @@ func (algorithm *baseAlgorithm) FetchData() (map[string]shared.Record, map[strin
 	return sourceRecords, targetRecords, nil
 }
 
-func (algorithm *baseAlgorithm) CreateDiffOutput(sourceRecords, targetRecords map[string]shared.Record) *DiffOutput {
+func (algorithm *baseAlgorithm) NewDiffOutput() *DiffOutput {
 	return &DiffOutput{
 		ToInsert:    []shared.Record{},
 		ToUpdate:    []shared.Record{},
 		ToDelete:    []shared.Record{},
-		SourceCount: len(sourceRecords),
-		TargetCount: len(targetRecords),
+		SourceCount: 0,
+		TargetCount: 0,
 	}
 }
 
