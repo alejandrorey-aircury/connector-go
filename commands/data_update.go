@@ -27,6 +27,10 @@ func (e *DataUpdateCommandError) Error() string {
 func dataUpdateCommand(_ context.Context, cli *cli.Command) error {
 	startTime := time.Now()
 
+	dataUpdateTable := output.NewDataUpdateTable()
+
+	dataUpdateTable.PrintCommandTitle()
+
 	environment.LoadEnv()
 
 	configurationFile := cli.String("config-file")
@@ -39,8 +43,6 @@ func dataUpdateCommand(_ context.Context, cli *cli.Command) error {
 
 	sourceModel := model.ConstructModelFromDefinition(definition.Source)
 	targetModel := model.ConstructModelFromDefinition(definition.Target)
-
-	dataUpdateTable := output.NewDataUpdateTable()
 
 	sourceConnection, sourceErr := database.ConnectDatabase(definition.Source.URL)
 	targetConnection, targetErr := database.ConnectDatabase(definition.Target.URL)
@@ -122,8 +124,9 @@ func dataUpdateCommand(_ context.Context, cli *cli.Command) error {
 		dataUpdateTable.UpdateTableRow(targetTableName, row)
 	}
 
-	fmt.Println("Data update process finished!!")
-	fmt.Printf("Execution time: %f seconds", time.Since(startTime).Seconds())
+	successMessage := fmt.Sprintf("Data update process finished!! Execution time: %f seconds", time.Since(startTime).Seconds())
+
+	dataUpdateTable.Success(successMessage)
 
 	return nil
 }

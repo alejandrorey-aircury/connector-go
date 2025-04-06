@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/pterm/pterm"
 )
 
 type DataUpdateTableRow struct {
@@ -103,4 +104,23 @@ func (dataUpdateTable *DataUpdateTable) GetRowByTableName(tableName string) (Dat
 	}
 
 	return DataUpdateTableRow{}, fmt.Errorf("no row with table name %s found", tableName)
+}
+
+func (dataUpdateTable *DataUpdateTable) PrintCommandTitle() {
+	pterm.Println()
+	pterm.DefaultHeader.Println("Connector Data Update Command")
+	pterm.Println()
+}
+
+func (dataUpdateTable *DataUpdateTable) Success(message string) {
+	headerPrinter := pterm.HeaderPrinter{
+		TextStyle:       pterm.NewStyle(pterm.FgBlack),
+		BackgroundStyle: pterm.NewStyle(pterm.BgGreen),
+		Margin:          10,
+		FullWidth:       false,
+	}
+
+	pterm.Println()
+	headerPrinter.Println(message)
+	pterm.Println()
 }
