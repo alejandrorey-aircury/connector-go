@@ -18,18 +18,36 @@ type baseAlgorithm struct {
 	Target *endpoint.Endpoint
 }
 
+type dataFetchResult struct {
+	records map[string]shared.Record
+	err     error
+}
+
 func (algorithm *baseAlgorithm) FetchData() (map[string]shared.Record, map[string]shared.Record, error) {
-	sourceRecords, err := algorithm.Source.FetchData()
-	if err != nil {
-		return nil, nil, fmt.Errorf("error fetching source data: %w", err)
+	sourceChannel := make(chan dataFetchResult)
+	targetChannel := make(chan dataFetchResult)
+
+	go func() {
+		records, err := algorithm.Source.FetchData()
+		sourceChannel <- dataFetchResult{records: records, err: err}
+	}()
+
+	go func() {
+		records, err := algorithm.Target.FetchData()
+		targetChannel <- dataFetchResult{records: records, err: err}
+	}()
+
+	sourceResult := <-sourceChannel
+	if sourceResult.err != nil {
+		return nil, nil, fmt.Errorf("error fetching source data: %w", sourceResult.err)
 	}
 
-	targetRecords, err := algorithm.Target.FetchData()
-	if err != nil {
-		return nil, nil, fmt.Errorf("error fetching target data: %w", err)
+	targetResult := <-targetChannel
+	if targetResult.err != nil {
+		return nil, nil, fmt.Errorf("error fetching target data: %w", targetResult.err)
 	}
 
-	return sourceRecords, targetRecords, nil
+	return sourceResult.records, targetResult.records, nil
 }
 
 func (algorithm *baseAlgorithm) NewDiffOutput() *DiffOutput {
