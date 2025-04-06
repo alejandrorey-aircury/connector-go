@@ -7,8 +7,6 @@ import (
 
 	"github.com/aircury/connector/commands"
 	"github.com/urfave/cli/v3"
-
-	_ "github.com/lib/pq"
 )
 
 const AppName = "connector"
