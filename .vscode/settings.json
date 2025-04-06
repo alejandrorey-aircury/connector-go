@@ -1,0 +1,19 @@
+{
+    "dbcode.connections": [
+        {
+            "connectionId": "5bu7-cya1UxpgqfKpcehU",
+            "name": "[DEV] connector",
+            "driver": "postgres",
+            "connectionType": "host",
+            "host": "localhost",
+            "port": 5432,
+            "ssl": false,
+            "username": "postgres",
+            "password": "password",
+            "savePassword": "yes",
+            "database": "connector",
+            "readOnly": false,
+            "connectionTimeout": 30
+        }
+    ]
+}
