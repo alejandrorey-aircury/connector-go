@@ -16,6 +16,14 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
+type DataUpdateCommandError struct {
+	Message string
+}
+
+func (e *DataUpdateCommandError) Error() string {
+	return fmt.Sprintf("Error in data update command: %s", e.Message)
+}
+
 func dataUpdateCommand(_ context.Context, cli *cli.Command) error {
 	startTime := time.Now()
 
@@ -26,7 +34,7 @@ func dataUpdateCommand(_ context.Context, cli *cli.Command) error {
 	definition, definitionErr := definitionPkg.ProcessDefinition(configurationFile)
 
 	if definitionErr != nil {
-		return definitionErr
+		return &DataUpdateCommandError{Message: definitionErr.Error()}
 	}
 
 	sourceModel := model.ConstructModelFromDefinition(definition.Source)
@@ -40,11 +48,11 @@ func dataUpdateCommand(_ context.Context, cli *cli.Command) error {
 	targetConnection, targetErr := database.ConnectDatabase(definition.Target.URL)
 
 	if sourceErr != nil {
-		return sourceErr
+		return &DataUpdateCommandError{Message: sourceErr.Error()}
 	}
 
 	if targetErr != nil {
-		return targetErr
+		return &DataUpdateCommandError{Message: targetErr.Error()}
 	}
 
 	defer sourceConnection.Close()
@@ -56,13 +64,13 @@ func dataUpdateCommand(_ context.Context, cli *cli.Command) error {
 		row, err := dataUpdateTable.GetRowByTableName(targetTableName)
 
 		if err != nil {
-			return err
+			return &DataUpdateCommandError{Message: err.Error()}
 		}
 
 		sourceTable := sourceModel.GetTableByName(targetTable.SourceTable)
 
 		if sourceTable == nil {
-			return fmt.Errorf("source table %s not found", targetTableName)
+			return &DataUpdateCommandError{Message: fmt.Sprintf("source table %s not found", targetTableName)}
 		}
 
 		source := endpoint.Endpoint{
@@ -84,7 +92,7 @@ func dataUpdateCommand(_ context.Context, cli *cli.Command) error {
 		sourceTotal, err := source.DataProvider.GetTotalCount()
 
 		if err != nil {
-			return err
+			return &DataUpdateCommandError{Message: err.Error()}
 		}
 
 		row.SourceTotal = sourceTotal
@@ -93,7 +101,7 @@ func dataUpdateCommand(_ context.Context, cli *cli.Command) error {
 		targetTotal, err := target.DataProvider.GetTotalCount()
 
 		if err != nil {
-			return err
+			return &DataUpdateCommandError{Message: err.Error()}
 		}
 
 		row.TargetTotal = targetTotal
@@ -102,7 +110,7 @@ func dataUpdateCommand(_ context.Context, cli *cli.Command) error {
 		diff, err := algorithm.SequentialOrdered(source, target)
 
 		if err != nil {
-			return err
+			return &DataUpdateCommandError{Message: err.Error()}
 		}
 
 		row.Inserts = len(diff.ToInsert)
