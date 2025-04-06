@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/aircury/connector/internal/connector"
@@ -50,29 +51,49 @@ func dataUpdateCommand(_ context.Context, cli *cli.Command) error {
 	defer sourceConnection.Close()
 	defer targetConnection.Close()
 
+	errorChan := make(chan error, len(targetModel.Tables))
+
+	var waitGroup sync.WaitGroup
+
 	for targetTableName, targetTable := range targetModel.Tables {
-		dataUpdateTable.AddNewTableRow(targetTableName)
+		waitGroup.Add(1)
 
-		sourceTable := sourceModel.GetTableByName(targetTable.SourceTable)
+		go func(tableName string, table *model.Table) {
+			defer waitGroup.Done()
 
-		if sourceTable == nil {
-			return &connector.DataUpdateCommandError{Message: fmt.Sprintf("source table %s not found", targetTableName)}
-		}
+			dataUpdateTable.AddNewTableRow(tableName)
 
-		source := endpoint.Endpoint{
-			DataProvider: dataprovider.NewDBDataProvider(sourceConnection, sourceTable),
-			Table:        sourceTable,
-		}
+			sourceTable := sourceModel.GetTableByName(table.SourceTable)
 
-		target := endpoint.Endpoint{
-			DataProvider: dataprovider.NewDBDataProvider(targetConnection, targetTable),
-			Table:        targetTable,
-		}
+			if sourceTable == nil {
+				errorChan <- &connector.DataUpdateCommandError{Message: fmt.Sprintf("source table %s not found", tableName)}
+				return
+			}
 
-		err := connector.ProcessTableDataUpdate(&source, &target, dataUpdateTable)
+			source := endpoint.Endpoint{
+				DataProvider: dataprovider.NewDBDataProvider(sourceConnection, sourceTable),
+				Table:        sourceTable,
+			}
 
+			target := endpoint.Endpoint{
+				DataProvider: dataprovider.NewDBDataProvider(targetConnection, table),
+				Table:        table,
+			}
+
+			err := connector.ProcessTableDataUpdate(&source, &target, dataUpdateTable)
+
+			if err != nil {
+				errorChan <- err
+			}
+		}(targetTableName, targetTable)
+	}
+
+	waitGroup.Wait()
+	close(errorChan)
+
+	for err := range errorChan {
 		if err != nil {
-			return &connector.DataUpdateCommandError{Message: err.Error()}
+			return err
 		}
 	}
 

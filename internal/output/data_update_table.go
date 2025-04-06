@@ -3,6 +3,7 @@ package output
 import (
 	"fmt"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/jedib0t/go-pretty/v6/table"
@@ -41,6 +42,7 @@ func NewDataUpdateTable() *DataUpdateTable {
 	dataUpdateTable := &DataUpdateTable{
 		writer,
 		map[string]DataUpdateTableRow{},
+		&sync.Mutex{},
 	}
 
 	dataUpdateTable.SetHeaders(table.Row{"Target Table", "Source", "Target", "Inserts", "Updates", "Drops", "Process Time (s)"})
@@ -51,17 +53,27 @@ func NewDataUpdateTable() *DataUpdateTable {
 type DataUpdateTable struct {
 	Writer table.Writer
 	Rows   map[string]DataUpdateTableRow
+	mutex  *sync.Mutex
 }
 
 func (dataUpdateTable *DataUpdateTable) Render() {
+	dataUpdateTable.mutex.Lock()
+	defer dataUpdateTable.mutex.Unlock()
+
 	dataUpdateTable.Writer.Render()
 }
 
 func (dataUpdateTable *DataUpdateTable) SetHeaders(headers table.Row) {
+	dataUpdateTable.mutex.Lock()
+	defer dataUpdateTable.mutex.Unlock()
+
 	dataUpdateTable.Writer.AppendHeader(headers)
 }
 
 func (dataUpdateTable *DataUpdateTable) AddNewTableRow(tableName string) {
+	dataUpdateTable.mutex.Lock()
+	defer dataUpdateTable.mutex.Unlock()
+
 	row := DataUpdateTableRow{
 		TableName:   tableName,
 		SourceTotal: 0,
@@ -75,28 +87,41 @@ func (dataUpdateTable *DataUpdateTable) AddNewTableRow(tableName string) {
 
 	dataUpdateTable.Rows[tableName] = row
 
-	dataUpdateTable.RefreshTable()
+	dataUpdateTable.refreshTable()
 }
 
 func (dataUpdateTable *DataUpdateTable) UpdateTableRow(tableName string, row DataUpdateTableRow) {
+	dataUpdateTable.mutex.Lock()
+	defer dataUpdateTable.mutex.Unlock()
+
 	row.ProcessTime = time.Since(row.StartTime).Seconds()
 
 	dataUpdateTable.Rows[tableName] = row
 
-	dataUpdateTable.RefreshTable()
+	dataUpdateTable.refreshTable()
 }
 
-func (dataUpdateTable *DataUpdateTable) RefreshTable() {
+func (dataUpdateTable *DataUpdateTable) refreshTable() {
 	dataUpdateTable.Writer.ResetRows()
 
 	for _, row := range dataUpdateTable.Rows {
 		dataUpdateTable.Writer.AppendRow(row.GetRowValues())
 	}
 
-	dataUpdateTable.Render()
+	dataUpdateTable.Writer.Render()
+}
+
+func (dataUpdateTable *DataUpdateTable) RefreshTable() {
+	dataUpdateTable.mutex.Lock()
+	defer dataUpdateTable.mutex.Unlock()
+
+	dataUpdateTable.refreshTable()
 }
 
 func (dataUpdateTable *DataUpdateTable) GetRowByTableName(tableName string) (DataUpdateTableRow, error) {
+	dataUpdateTable.mutex.Lock()
+	defer dataUpdateTable.mutex.Unlock()
+
 	for _, row := range dataUpdateTable.Rows {
 		if row.TableName == tableName {
 			return row, nil
@@ -107,12 +132,18 @@ func (dataUpdateTable *DataUpdateTable) GetRowByTableName(tableName string) (Dat
 }
 
 func (dataUpdateTable *DataUpdateTable) PrintCommandTitle() {
+	dataUpdateTable.mutex.Lock()
+	defer dataUpdateTable.mutex.Unlock()
+
 	pterm.Println()
 	pterm.DefaultHeader.Println("Connector Data Update Command")
 	pterm.Println()
 }
 
 func (dataUpdateTable *DataUpdateTable) Success(message string) {
+	dataUpdateTable.mutex.Lock()
+	defer dataUpdateTable.mutex.Unlock()
+
 	headerPrinter := pterm.HeaderPrinter{
 		TextStyle:       pterm.NewStyle(pterm.FgBlack),
 		BackgroundStyle: pterm.NewStyle(pterm.BgGreen),
