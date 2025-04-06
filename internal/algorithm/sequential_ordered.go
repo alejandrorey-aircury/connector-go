@@ -3,11 +3,11 @@ package algorithm
 import (
 	"fmt"
 
-	"github.com/aircury/connector/internal/dataprovider"
+	"github.com/aircury/connector/internal/endpoint"
 	"github.com/aircury/connector/internal/shared"
 )
 
-func SequentialOrdered(source, target dataprovider.Endpoint) (*DiffOutput, error) {
+func SequentialOrdered(source, target endpoint.Endpoint) (*DiffOutput, error) {
 	sourceRecords, err := source.FetchData()
 	if err != nil {
 		return nil, fmt.Errorf("error fetching source data: %w", err)

@@ -9,6 +9,7 @@ import (
 	"github.com/aircury/connector/internal/database"
 	"github.com/aircury/connector/internal/dataprovider"
 	definitionPkg "github.com/aircury/connector/internal/definition"
+	"github.com/aircury/connector/internal/endpoint"
 	"github.com/aircury/connector/internal/environment"
 	"github.com/aircury/connector/internal/model"
 	"github.com/aircury/connector/internal/output"
@@ -64,17 +65,23 @@ func dataUpdateCommand(_ context.Context, cli *cli.Command) error {
 			return fmt.Errorf("source table %s not found", targetTableName)
 		}
 
-		source := dataprovider.Endpoint{
-			Connection: sourceConnection,
-			Table:      sourceTable,
+		source := endpoint.Endpoint{
+			DataProvider: &dataprovider.DBDataProvider{
+				Connection: sourceConnection,
+				Table:      sourceTable,
+			},
+			Table: sourceTable,
 		}
 
-		target := dataprovider.Endpoint{
-			Connection: targetConnection,
-			Table:      targetTable,
+		target := endpoint.Endpoint{
+			DataProvider: &dataprovider.DBDataProvider{
+				Connection: targetConnection,
+				Table:      targetTable,
+			},
+			Table: targetTable,
 		}
 
-		sourceTotal, err := source.GetCount()
+		sourceTotal, err := source.DataProvider.GetTotalCount()
 
 		if err != nil {
 			return err
@@ -83,7 +90,7 @@ func dataUpdateCommand(_ context.Context, cli *cli.Command) error {
 		row.SourceTotal = sourceTotal
 		dataUpdateTable.UpdateTableRow(targetTableName, row)
 
-		targetTotal, err := target.GetCount()
+		targetTotal, err := target.DataProvider.GetTotalCount()
 
 		if err != nil {
 			return err

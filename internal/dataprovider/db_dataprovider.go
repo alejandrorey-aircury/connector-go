@@ -8,23 +8,28 @@ import (
 	"github.com/aircury/connector/internal/shared"
 )
 
-type Endpoint struct {
+type DataProvider interface {
+	GetTotalCount() (int, error)
+	FetchData() (map[string]shared.Record, error)
+}
+
+type DBDataProvider struct {
 	Connection *sql.DB
 	Table      *model.Table
 }
 
-func (endpoint *Endpoint) GetTableSelectQuery() string {
-	return fmt.Sprintf("SELECT * FROM %s.%s", endpoint.Table.Schema, endpoint.Table.GetFqName())
+func (dataProvider *DBDataProvider) getTableSelectQuery() string {
+	return fmt.Sprintf("SELECT * FROM %s.%s", dataProvider.Table.Schema, dataProvider.Table.GetFqName())
 }
 
-func (endpoint *Endpoint) getTableCountQuery() string {
-	return fmt.Sprintf("SELECT count(*) FROM (%s) as query", endpoint.GetTableSelectQuery())
+func (dataProvider *DBDataProvider) getTableCountQuery() string {
+	return fmt.Sprintf("SELECT count(*) FROM (%s) as query", dataProvider.getTableSelectQuery())
 }
 
-func (endpoint *Endpoint) GetCount() (int, error) {
-	query := endpoint.getTableCountQuery()
+func (dataProvider *DBDataProvider) GetTotalCount() (int, error) {
+	query := dataProvider.getTableCountQuery()
 
-	row := endpoint.Connection.QueryRow(query)
+	row := dataProvider.Connection.QueryRow(query)
 
 	var count int
 	err := row.Scan(&count)
@@ -36,10 +41,10 @@ func (endpoint *Endpoint) GetCount() (int, error) {
 	return count, nil
 }
 
-func (endpoint *Endpoint) FetchData() (map[string]shared.Record, error) {
-	query := endpoint.GetTableSelectQuery()
+func (dataProvider *DBDataProvider) FetchData() (map[string]shared.Record, error) {
+	query := dataProvider.getTableSelectQuery()
 
-	rows, err := endpoint.Connection.Query(query)
+	rows, err := dataProvider.Connection.Query(query)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query: %w", err)
@@ -55,7 +60,7 @@ func (endpoint *Endpoint) FetchData() (map[string]shared.Record, error) {
 
 	records := make(map[string]shared.Record)
 
-	keyName := endpoint.Table.GetKeys()[0].Name
+	keyName := dataProvider.Table.GetKeys()[0].Name
 
 	for rows.Next() {
 		values := make([]interface{}, len(columns))
