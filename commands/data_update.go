@@ -61,11 +61,21 @@ func dataUpdateCmd(_ context.Context, cli *cli.Command) error {
 		sourceTable := sourceModel.GetTableByName(targetTable.SourceTable)
 
 		if sourceTable == nil {
-			return fmt.Errorf("table %s not found", targetTableName)
+			return fmt.Errorf("source table %s not found", targetTableName)
 		}
 
-		sourceQuery := dataprovider.GetTableSelectQuery(sourceTable)
-		targetQuery := dataprovider.GetTableSelectQuery(targetTable)
+		source := dataprovider.Endpoint{
+			Connection: sourceConnection,
+			Table:      sourceTable,
+		}
+
+		target := dataprovider.Endpoint{
+			Connection: targetConnection,
+			Table:      targetTable,
+		}
+
+		sourceQuery := source.GetTableSelectQuery()
+		targetQuery := target.GetTableSelectQuery()
 
 		var sourceTotal, targetTotal int
 
@@ -81,7 +91,11 @@ func dataUpdateCmd(_ context.Context, cli *cli.Command) error {
 		row.TargetTotal = targetTotal
 		dataUpdateTable.UpdateTableRow(targetTableName, row)
 
-		diff, err := algorithm.SequentialOrdered(sourceConnection, targetConnection, sourceTable, targetTable)
+		diff, err := algorithm.SequentialOrdered(source, target)
+
+		if err != nil {
+			return err
+		}
 
 		row.Inserts = len(diff.ToInsert)
 		row.Updates = len(diff.ToUpdate)
@@ -90,7 +104,7 @@ func dataUpdateCmd(_ context.Context, cli *cli.Command) error {
 	}
 
 	fmt.Println("Data update process finished!!")
-	fmt.Println(fmt.Sprintf("Execution time: %f seconds", time.Since(startTime).Seconds()))
+	fmt.Printf("Execution time: %f seconds", time.Since(startTime).Seconds())
 
 	return nil
 }

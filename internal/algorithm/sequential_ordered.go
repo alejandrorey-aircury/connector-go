@@ -1,21 +1,19 @@
 package algorithm
 
 import (
-	"database/sql"
 	"fmt"
 
 	"github.com/aircury/connector/internal/dataprovider"
-	"github.com/aircury/connector/internal/model"
 	"github.com/aircury/connector/internal/shared"
 )
 
-func SequentialOrdered(sourceConnection, targetConnection *sql.DB, sourceTable, targetTable *model.Table) (*DiffOutput, error) {
-	sourceRecords, err := dataprovider.FetchData(sourceConnection, sourceTable)
+func SequentialOrdered(source, target dataprovider.Endpoint) (*DiffOutput, error) {
+	sourceRecords, err := source.FetchData()
 	if err != nil {
 		return nil, fmt.Errorf("error fetching source data: %w", err)
 	}
 
-	targetRecords, err := dataprovider.FetchData(targetConnection, targetTable)
+	targetRecords, err := target.FetchData()
 	if err != nil {
 		return nil, fmt.Errorf("error fetching target data: %w", err)
 	}

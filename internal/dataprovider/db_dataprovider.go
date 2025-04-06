@@ -8,14 +8,19 @@ import (
 	"github.com/aircury/connector/internal/shared"
 )
 
-func GetTableSelectQuery(table *model.Table) string {
-	return fmt.Sprintf("SELECT * FROM %s.%s", table.Schema, table.GetFqName())
+type Endpoint struct {
+	Connection *sql.DB
+	Table      *model.Table
 }
 
-func FetchData(connection *sql.DB, table *model.Table) (map[string]shared.Record, error) {
-	query := GetTableSelectQuery(table)
+func (endpoint *Endpoint) GetTableSelectQuery() string {
+	return fmt.Sprintf("SELECT * FROM %s.%s", endpoint.Table.Schema, endpoint.Table.GetFqName())
+}
 
-	rows, err := connection.Query(query)
+func (endpoint *Endpoint) FetchData() (map[string]shared.Record, error) {
+	query := endpoint.GetTableSelectQuery()
+
+	rows, err := endpoint.Connection.Query(query)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query: %w", err)
@@ -31,7 +36,7 @@ func FetchData(connection *sql.DB, table *model.Table) (map[string]shared.Record
 
 	records := make(map[string]shared.Record)
 
-	keyName := table.GetKeys()[0].Name
+	keyName := endpoint.Table.GetKeys()[0].Name
 
 	for rows.Next() {
 		values := make([]interface{}, len(columns))
