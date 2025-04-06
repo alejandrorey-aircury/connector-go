@@ -1,30 +1,30 @@
 package algorithm
 
 import (
-	"fmt"
-
 	"github.com/aircury/connector/internal/endpoint"
-	"github.com/aircury/connector/internal/shared"
 )
 
-func SequentialOrdered(source, target endpoint.Endpoint) (*DiffOutput, error) {
-	sourceRecords, err := source.FetchData()
+type SequentialOrderedAlgorithm struct {
+	baseAlgorithm
+}
+
+func NewSequentialOrderedAlgorithm(source, target endpoint.Endpoint) *SequentialOrderedAlgorithm {
+	return &SequentialOrderedAlgorithm{
+		baseAlgorithm: baseAlgorithm{
+			Name:   "SequentialOrdered",
+			Source: source,
+			Target: target,
+		},
+	}
+}
+
+func (algorithm *SequentialOrderedAlgorithm) Run() (*DiffOutput, error) {
+	sourceRecords, targetRecords, err := algorithm.FetchData()
 	if err != nil {
-		return nil, fmt.Errorf("error fetching source data: %w", err)
+		return nil, err
 	}
 
-	targetRecords, err := target.FetchData()
-	if err != nil {
-		return nil, fmt.Errorf("error fetching target data: %w", err)
-	}
-
-	diffOutput := &DiffOutput{
-		ToInsert:    []shared.Record{},
-		ToUpdate:    []shared.Record{},
-		ToDelete:    []shared.Record{},
-		SourceCount: len(sourceRecords),
-		TargetCount: len(targetRecords),
-	}
+	diffOutput := algorithm.CreateDiffOutput(sourceRecords, targetRecords)
 
 	for key, sourceRecord := range sourceRecords {
 		if targetRecord, exists := targetRecords[key]; exists {

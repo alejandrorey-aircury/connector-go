@@ -4,8 +4,43 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/aircury/connector/internal/endpoint"
 	"github.com/aircury/connector/internal/shared"
 )
+
+type Algorithm interface {
+	Run() (*DiffOutput, error)
+}
+
+type baseAlgorithm struct {
+	Name   string
+	Source endpoint.Endpoint
+	Target endpoint.Endpoint
+}
+
+func (algorithm *baseAlgorithm) FetchData() (map[string]shared.Record, map[string]shared.Record, error) {
+	sourceRecords, err := algorithm.Source.FetchData()
+	if err != nil {
+		return nil, nil, fmt.Errorf("error fetching source data: %w", err)
+	}
+
+	targetRecords, err := algorithm.Target.FetchData()
+	if err != nil {
+		return nil, nil, fmt.Errorf("error fetching target data: %w", err)
+	}
+
+	return sourceRecords, targetRecords, nil
+}
+
+func (algorithm *baseAlgorithm) CreateDiffOutput(sourceRecords, targetRecords map[string]shared.Record) *DiffOutput {
+	return &DiffOutput{
+		ToInsert:    []shared.Record{},
+		ToUpdate:    []shared.Record{},
+		ToDelete:    []shared.Record{},
+		SourceCount: len(sourceRecords),
+		TargetCount: len(targetRecords),
+	}
+}
 
 type DiffOutput struct {
 	ToInsert    []shared.Record

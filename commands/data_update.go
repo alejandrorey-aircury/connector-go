@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/aircury/connector/internal/algorithm"
 	"github.com/aircury/connector/internal/database"
 	"github.com/aircury/connector/internal/dataprovider"
 	definitionPkg "github.com/aircury/connector/internal/definition"
@@ -13,6 +12,7 @@ import (
 	"github.com/aircury/connector/internal/environment"
 	"github.com/aircury/connector/internal/model"
 	"github.com/aircury/connector/internal/output"
+	"github.com/aircury/connector/internal/planner"
 	"github.com/urfave/cli/v3"
 )
 
@@ -101,7 +101,18 @@ func dataUpdateCommand(_ context.Context, cli *cli.Command) error {
 		row.TargetTotal = targetTotal
 		dataUpdateTable.UpdateTableRow(targetTableName, row)
 
-		diff, err := algorithm.SequentialOrdered(source, target)
+		planner := planner.ConnectorPlanner{
+			Source: source,
+			Target: target,
+		}
+
+		algorithm, err := planner.FindBestAlgorithm()
+
+		if err != nil {
+			return &DataUpdateCommandError{Message: err.Error()}
+		}
+
+		diff, err := algorithm.Run()
 
 		if err != nil {
 			return &DataUpdateCommandError{Message: err.Error()}
