@@ -16,8 +16,19 @@ source:
         columns:
           id: integer
           name: string
+          surname: string
         keys:
           - name
+
+      third_caching_source: &third_caching_source
+        schema: demos
+        columns:
+          id: integer
+          name: string
+          surname: string
+        keys:
+          - surname
+      
 
 target:
   url: 'postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${TARGET_DATABASE_DB}?sslmode=disable'
@@ -32,3 +43,8 @@ target:
         <<: *second_caching_source
         schema: demos
         sourceTable: second_caching_source
+
+      third_caching_target:
+        <<: *third_caching_source
+        schema: demos
+        sourceTable: third_caching_source
