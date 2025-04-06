@@ -42,8 +42,6 @@ func dataUpdateCommand(_ context.Context, cli *cli.Command) error {
 
 	dataUpdateTable := output.NewDataUpdateTable()
 
-	dataUpdateTable.Render()
-
 	sourceConnection, sourceErr := database.ConnectDatabase(definition.Source.URL)
 	targetConnection, targetErr := database.ConnectDatabase(definition.Target.URL)
 
