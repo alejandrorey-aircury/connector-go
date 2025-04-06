@@ -8,7 +8,7 @@ var Commands = []*cli.Command{
 	{
 		Name:   "data:update",
 		Usage:  "This commands replicates source into target",
-		Action: dataUpdateCmd,
+		Action: dataUpdateCommand,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:    "config-file",

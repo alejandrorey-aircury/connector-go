@@ -15,7 +15,7 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-func dataUpdateCmd(_ context.Context, cli *cli.Command) error {
+func dataUpdateCommand(_ context.Context, cli *cli.Command) error {
 	startTime := time.Now()
 
 	environment.LoadEnv()
