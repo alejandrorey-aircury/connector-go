@@ -76,7 +76,9 @@ func dataUpdateCommand(_ context.Context, cli *cli.Command) error {
 		source := endpoint.Endpoint{
 			DataProvider: &dataprovider.DBDataProvider{
 				Connection: sourceConnection,
-				Table:      sourceTable,
+				AbstractDataProvider: dataprovider.AbstractDataProvider{
+					Table: sourceTable,
+				},
 			},
 			Table: sourceTable,
 		}
@@ -84,7 +86,9 @@ func dataUpdateCommand(_ context.Context, cli *cli.Command) error {
 		target := endpoint.Endpoint{
 			DataProvider: &dataprovider.DBDataProvider{
 				Connection: targetConnection,
-				Table:      targetTable,
+				AbstractDataProvider: dataprovider.AbstractDataProvider{
+					Table: targetTable,
+				},
 			},
 			Table: targetTable,
 		}

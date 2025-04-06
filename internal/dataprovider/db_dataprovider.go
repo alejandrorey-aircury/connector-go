@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/aircury/connector/internal/model"
 	"github.com/aircury/connector/internal/shared"
 )
 
@@ -14,8 +13,8 @@ type DataProvider interface {
 }
 
 type DBDataProvider struct {
+	AbstractDataProvider
 	Connection *sql.DB
-	Table      *model.Table
 }
 
 func (dataProvider *DBDataProvider) getTableSelectQuery() string {
@@ -45,43 +44,23 @@ func (dataProvider *DBDataProvider) FetchData() (map[string]shared.Record, error
 	query := dataProvider.getTableSelectQuery()
 
 	rows, err := dataProvider.Connection.Query(query)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query: %w", err)
 	}
-
 	defer rows.Close()
-
-	columns, err := rows.Columns()
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to get columns: %w", err)
-	}
 
 	records := make(map[string]shared.Record)
 
-	keyName := dataProvider.Table.GetKeys()[0].Name
-
 	for rows.Next() {
-		values := make([]interface{}, len(columns))
-		scanArgs := make([]interface{}, len(values))
-		for i := range values {
-			scanArgs[i] = &values[i]
-		}
-
-		err = rows.Scan(scanArgs...)
+		record, err := dataProvider.fetchRecord(rows)
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan row: %w", err)
+			return nil, err
 		}
 
-		record := make(shared.Record)
+		modelRecord := dataProvider.FilterRecordByModelColumns(record)
+		keyValue := dataProvider.GetRecordIdentifier(modelRecord)
 
-		for i, colName := range columns {
-			val := values[i]
-			record[colName] = val
-		}
-
-		records[fmt.Sprintf("%v", record[keyName])] = record
+		records[keyValue] = modelRecord
 	}
 
 	if err = rows.Err(); err != nil {
@@ -89,4 +68,29 @@ func (dataProvider *DBDataProvider) FetchData() (map[string]shared.Record, error
 	}
 
 	return records, nil
+}
+
+func (dataProvider *DBDataProvider) fetchRecord(rows *sql.Rows) (shared.Record, error) {
+	columns, err := rows.Columns()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get columns: %w", err)
+	}
+
+	recordValues := make([]interface{}, len(columns))
+	scanArgs := make([]interface{}, len(recordValues))
+	for i := range recordValues {
+		scanArgs[i] = &recordValues[i]
+	}
+
+	err = rows.Scan(scanArgs...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to scan row: %w", err)
+	}
+
+	record := make(shared.Record)
+	for i, colName := range columns {
+		record[colName] = recordValues[i]
+	}
+
+	return record, nil
 }

@@ -6,41 +6,6 @@ import (
 	"github.com/aircury/connector/internal/definition"
 )
 
-type Table struct {
-	Schema       string
-	Name         string
-	ResourceName string
-	Columns      map[string]*Column
-	SourceTable  string
-}
-
-func (table *Table) GetKeys() []*Column {
-	var keys []*Column
-
-	for _, column := range table.Columns {
-		if column.isKey {
-			keys = append(keys, column)
-		}
-	}
-
-	return keys
-}
-
-func (table *Table) GetFqName() string {
-	if len(table.ResourceName) == 0 {
-		return table.Name
-	}
-
-	return table.ResourceName
-}
-
-type Column struct {
-	Type     string
-	Name     string
-	Nullable bool
-	isKey    bool
-}
-
 type Model struct {
 	Tables map[string]*Table
 }

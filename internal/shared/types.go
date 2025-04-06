@@ -1,3 +1,3 @@
 package shared
 
-type Record map[string]interface{}
+type Record map[string]any
