@@ -8,7 +8,7 @@ type WriteAllAlgorithm struct {
 	baseAlgorithm
 }
 
-func NewWriteAllAlgorithm(source, target endpoint.Endpoint) *WriteAllAlgorithm {
+func NewWriteAllAlgorithm(source, target *endpoint.Endpoint) *WriteAllAlgorithm {
 	return &WriteAllAlgorithm{
 		baseAlgorithm: baseAlgorithm{
 			Name:   "WriteAll",

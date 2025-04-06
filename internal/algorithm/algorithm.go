@@ -14,8 +14,8 @@ type Algorithm interface {
 
 type baseAlgorithm struct {
 	Name   string
-	Source endpoint.Endpoint
-	Target endpoint.Endpoint
+	Source *endpoint.Endpoint
+	Target *endpoint.Endpoint
 }
 
 func (algorithm *baseAlgorithm) FetchData() (map[string]shared.Record, map[string]shared.Record, error) {

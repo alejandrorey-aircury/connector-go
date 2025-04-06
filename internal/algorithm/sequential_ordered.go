@@ -8,7 +8,7 @@ type SequentialOrderedAlgorithm struct {
 	baseAlgorithm
 }
 
-func NewSequentialOrderedAlgorithm(source, target endpoint.Endpoint) *SequentialOrderedAlgorithm {
+func NewSequentialOrderedAlgorithm(source, target *endpoint.Endpoint) *SequentialOrderedAlgorithm {
 	return &SequentialOrderedAlgorithm{
 		baseAlgorithm: baseAlgorithm{
 			Name:   "SequentialOrdered",

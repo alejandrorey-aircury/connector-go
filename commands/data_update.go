@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/aircury/connector/internal/connector"
 	"github.com/aircury/connector/internal/database"
 	"github.com/aircury/connector/internal/dataprovider"
 	definitionPkg "github.com/aircury/connector/internal/definition"
@@ -12,17 +13,8 @@ import (
 	"github.com/aircury/connector/internal/environment"
 	"github.com/aircury/connector/internal/model"
 	"github.com/aircury/connector/internal/output"
-	"github.com/aircury/connector/internal/planner"
 	"github.com/urfave/cli/v3"
 )
-
-type DataUpdateCommandError struct {
-	Message string
-}
-
-func (e *DataUpdateCommandError) Error() string {
-	return fmt.Sprintf("Error in data update command: %s", e.Message)
-}
 
 func dataUpdateCommand(_ context.Context, cli *cli.Command) error {
 	startTime := time.Now()
@@ -38,7 +30,7 @@ func dataUpdateCommand(_ context.Context, cli *cli.Command) error {
 	definition, definitionErr := definitionPkg.ProcessDefinition(configurationFile)
 
 	if definitionErr != nil {
-		return &DataUpdateCommandError{Message: definitionErr.Error()}
+		return &connector.DataUpdateCommandError{Message: definitionErr.Error()}
 	}
 
 	sourceModel := model.ConstructModelFromDefinition(definition.Source)
@@ -48,11 +40,11 @@ func dataUpdateCommand(_ context.Context, cli *cli.Command) error {
 	targetConnection, targetErr := database.ConnectDatabase(definition.Target.URL)
 
 	if sourceErr != nil {
-		return &DataUpdateCommandError{Message: sourceErr.Error()}
+		return &connector.DataUpdateCommandError{Message: sourceErr.Error()}
 	}
 
 	if targetErr != nil {
-		return &DataUpdateCommandError{Message: targetErr.Error()}
+		return &connector.DataUpdateCommandError{Message: targetErr.Error()}
 	}
 
 	defer sourceConnection.Close()
@@ -61,16 +53,10 @@ func dataUpdateCommand(_ context.Context, cli *cli.Command) error {
 	for targetTableName, targetTable := range targetModel.Tables {
 		dataUpdateTable.AddNewTableRow(targetTableName)
 
-		row, err := dataUpdateTable.GetRowByTableName(targetTableName)
-
-		if err != nil {
-			return &DataUpdateCommandError{Message: err.Error()}
-		}
-
 		sourceTable := sourceModel.GetTableByName(targetTable.SourceTable)
 
 		if sourceTable == nil {
-			return &DataUpdateCommandError{Message: fmt.Sprintf("source table %s not found", targetTableName)}
+			return &connector.DataUpdateCommandError{Message: fmt.Sprintf("source table %s not found", targetTableName)}
 		}
 
 		source := endpoint.Endpoint{
@@ -83,45 +69,11 @@ func dataUpdateCommand(_ context.Context, cli *cli.Command) error {
 			Table:        targetTable,
 		}
 
-		sourceTotal, err := source.DataProvider.GetTotalCount()
+		err := connector.ProcessTableDataUpdate(&source, &target, dataUpdateTable)
 
 		if err != nil {
-			return &DataUpdateCommandError{Message: err.Error()}
+			return &connector.DataUpdateCommandError{Message: err.Error()}
 		}
-
-		row.SourceTotal = sourceTotal
-		dataUpdateTable.UpdateTableRow(targetTableName, row)
-
-		targetTotal, err := target.DataProvider.GetTotalCount()
-
-		if err != nil {
-			return &DataUpdateCommandError{Message: err.Error()}
-		}
-
-		row.TargetTotal = targetTotal
-		dataUpdateTable.UpdateTableRow(targetTableName, row)
-
-		planner := planner.ConnectorPlanner{
-			Source: source,
-			Target: target,
-		}
-
-		algorithm, err := planner.FindBestAlgorithm()
-
-		if err != nil {
-			return &DataUpdateCommandError{Message: err.Error()}
-		}
-
-		diff, err := algorithm.Run()
-
-		if err != nil {
-			return &DataUpdateCommandError{Message: err.Error()}
-		}
-
-		row.Inserts = len(diff.ToInsert)
-		row.Updates = len(diff.ToUpdate)
-		row.Drops = len(diff.ToDelete)
-		dataUpdateTable.UpdateTableRow(targetTableName, row)
 	}
 
 	successMessage := fmt.Sprintf("Data update process finished!! Execution time: %f seconds", time.Since(startTime).Seconds())

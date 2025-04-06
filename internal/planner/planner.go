@@ -6,8 +6,8 @@ import (
 )
 
 type ConnectorPlanner struct {
-	Source endpoint.Endpoint
-	Target endpoint.Endpoint
+	Source *endpoint.Endpoint
+	Target *endpoint.Endpoint
 }
 
 func (planner *ConnectorPlanner) FindBestAlgorithm() (algorithm.Algorithm, error) {
